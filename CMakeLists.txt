@@ -1,8 +1,27 @@
 cmake_minimum_required(VERSION 3.10)
-
 project(perf_counter LANGUAGES C VERSION 0.1.0)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+#
+# Build type default: Release
+#
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    message(STATUS "No build type selected, default to Release")
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type (default Release)" FORCE)
+endif()
+
+#
+# Link-time optimization (LTO)
+#
+include(CheckIPOSupported)
+check_ipo_supported(RESULT is_lto_supported)
+
+if(is_lto_supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+else()
+    message(WARNING "Link-time optimization (LTO) is not supported by the compiler.")
+endif()
 
 add_library(perf_counter
     src/perf_counter.c
