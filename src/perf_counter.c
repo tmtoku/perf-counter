@@ -9,6 +9,12 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
+#ifdef PERF_COUNTER_WITH_LIBPFM
+#include <perfmon/pfmlib.h>
+#include <perfmon/pfmlib_perf_event.h>
+#include <stdatomic.h>
+#endif
+
 static int32_t sys_perf_event_open(const struct perf_event_attr* const attr, const int32_t group_fd)
 {
     // pid = 0, cpu = -1: Measure the calling process/thread on any CPU.
@@ -65,7 +71,7 @@ struct perf_counter perf_counter_open(const struct perf_event_attr* const attr, 
 struct perf_counter perf_counter_open_by_id(const uint32_t event_type, const uint64_t event_config,
                                             const int32_t group_fd)
 {
-    struct perf_event_attr attr = (struct perf_event_attr){0};
+    struct perf_event_attr attr = {0};
 
     attr.size = sizeof(struct perf_event_attr);
     attr.type = event_type;
@@ -82,6 +88,79 @@ struct perf_counter perf_counter_open_by_id(const uint32_t event_type, const uin
 
     return perf_counter_open(&attr, group_fd);
 }
+
+#ifdef PERF_COUNTER_WITH_LIBPFM
+static bool ensure_libpfm_initialized(void)
+{
+    enum
+    {
+        STATE_UNINITIALIZED,
+        STATE_IN_PROGRESS,
+        STATE_SUCCESS,
+        STATE_FAILED,
+    };
+
+    static atomic_int current_state = STATE_UNINITIALIZED;
+
+    // Return immediately if initialization is already complete.
+    const int32_t current_value = atomic_load(&current_state);
+    if (current_value == STATE_SUCCESS)
+    {
+        return true;
+    }
+    if (current_value == STATE_FAILED)
+    {
+        return false;
+    }
+
+    // Try to claim initialization responsibility.
+    int expected_state = STATE_UNINITIALIZED;
+    if (atomic_compare_exchange_strong(&current_state, &expected_state, STATE_IN_PROGRESS))
+    {
+        const int32_t result_state = (pfm_initialize() == PFM_SUCCESS) ? STATE_SUCCESS : STATE_FAILED;
+        atomic_store(&current_state, result_state);
+        return result_state == STATE_SUCCESS;
+    }
+
+    // Wait for the other thread to complete initialization.
+    while (atomic_load(&current_state) == STATE_IN_PROGRESS)
+    {
+    }
+
+    return atomic_load(&current_state) == STATE_SUCCESS;
+}
+
+struct perf_counter perf_counter_open_by_name(const char* const event_name, const int32_t group_fd)
+{
+    if (!ensure_libpfm_initialized())
+    {
+        return (struct perf_counter){.fd = -1, .metadata_page = NULL};
+    }
+
+    struct perf_event_attr attr = {0};
+    attr.size = sizeof(struct perf_event_attr);
+
+    pfm_perf_encode_arg_t arg = {0};
+    arg.attr = &attr;
+    arg.size = sizeof(pfm_perf_encode_arg_t);
+
+    // Translate the event name into raw hardware attributes.
+    // PFM_PLM3: Monitor events in user space only.
+    const int32_t ret = pfm_get_os_event_encoding(event_name, PFM_PLM3, PFM_OS_PERF_EVENT_EXT, &arg);
+    if (ret != PFM_SUCCESS)
+    {
+        return (struct perf_counter){.fd = -1, .metadata_page = NULL};
+    }
+
+    if (group_fd == -1)
+    {
+        attr.pinned = 1;  // Always schedule on CPU
+    }
+    attr.disabled = 1;    // Must be enabled manually.
+
+    return perf_counter_open(&attr, group_fd);
+}
+#endif
 
 void perf_counter_close(struct perf_counter* const pc)
 {
