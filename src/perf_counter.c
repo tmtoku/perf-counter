@@ -61,7 +61,7 @@ static struct perf_event_mmap_page* mmap_perf_metadata_page(const int32_t fd)
     return (struct perf_event_mmap_page*)mapped_area;
 }
 
-struct perf_counter perf_counter_open(const uint32_t event_type, const uint64_t config, const int32_t group_fd)
+struct perf_counter perf_counter_open_by_id(const uint32_t event_type, const uint64_t config, const int32_t group_fd)
 {
     struct perf_event_attr attr;
     initialize_perf_event_attr(&attr, event_type, config, group_fd);

@@ -17,7 +17,7 @@ extern "C"
         struct perf_event_mmap_page* metadata_page;
     };
 
-    struct perf_counter perf_counter_open(uint32_t event_type, uint64_t config, int32_t group_fd);
+    struct perf_counter perf_counter_open_by_id(uint32_t event_type, uint64_t config, int32_t group_fd);
     void perf_counter_close(struct perf_counter* pc);
     int32_t perf_counter_enable(const struct perf_counter* pc);
     int32_t perf_counter_disable(const struct perf_counter* pc);
@@ -40,7 +40,8 @@ extern "C"
 
         PERF_COUNTER_EXECUTION_FENCE();
 
-        do {
+        do
+        {
             seq = perf_metadata_page->lock;
             PERF_COUNTER_COMPILER_BARRIER();
 
