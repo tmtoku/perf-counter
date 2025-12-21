@@ -33,8 +33,8 @@ extern "C"
 
     static inline uint64_t perf_counter_read(const struct perf_counter* const pc)
     {
-        uint32_t low = 0;
-        uint32_t high = 0;
+        uint32_t low = 0;   // NOLINT(misc-const-correctness)
+        uint32_t high = 0;  // NOLINT(misc-const-correctness)
         uint32_t seq;
         int64_t offset;
 
