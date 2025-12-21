@@ -160,6 +160,61 @@ struct perf_counter perf_counter_open_by_name(const char* const event_name, cons
 
     return perf_counter_open(&attr, group_fd);
 }
+
+static void print_all_pmu_events(FILE* const fp, const pfm_pmu_t pmu_index, const pfm_pmu_info_t* const pmu_info)
+{
+    for (int32_t event_index = pmu_info->first_event; event_index != -1; event_index = pfm_get_event_next(event_index))
+    {
+        pfm_event_info_t event_info = {0};
+        event_info.size = sizeof(event_info);
+
+        if (pfm_get_event_info(event_index, PFM_OS_PERF_EVENT, &event_info) == PFM_SUCCESS &&
+            event_info.pmu == pmu_index)
+        {
+            fprintf(fp, "%s::%s # %s\n", pmu_info->name, event_info.name, event_info.desc ? event_info.desc : "N/A");
+
+            int32_t attr_index;
+            pfm_for_each_event_attr(attr_index, &event_info)
+            {
+                pfm_event_attr_info_t attr_info = {0};
+                attr_info.size = sizeof(attr_info);
+
+                if (pfm_get_event_attr_info(event_index, attr_index, PFM_OS_PERF_EVENT, &attr_info) != PFM_SUCCESS)
+                {
+                    continue;
+                }
+
+                if (attr_info.type == PFM_ATTR_UMASK)
+                {
+                    fprintf(fp, "  %s::%s:%s # %s\n", pmu_info->name, event_info.name, attr_info.name,
+                            attr_info.desc ? attr_info.desc : "N/A");
+                }
+            }
+            fprintf(fp, "\n");
+        }
+    }
+}
+
+void perf_counter_print_available_events(FILE* const fp)
+{
+    if (!ensure_libpfm_initialized())
+    {
+        fprintf(fp, "Error: failed to initialize libpfm library.\n");
+        return;
+    }
+
+    pfm_pmu_info_t pmu_info = {0};
+    pmu_info.size = sizeof(pmu_info);
+
+    pfm_pmu_t pmu_index;
+    pfm_for_all_pmus(pmu_index)
+    {
+        if (pfm_get_pmu_info(pmu_index, &pmu_info) == PFM_SUCCESS && pmu_info.is_present)
+        {
+            print_all_pmu_events(fp, pmu_index, &pmu_info);
+        }
+    }
+}
 #endif
 
 void perf_counter_close(struct perf_counter* const pc)
