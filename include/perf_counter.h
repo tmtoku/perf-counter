@@ -1,5 +1,5 @@
-#ifndef PERF_COUNTER_H
-#define PERF_COUNTER_H
+#ifndef PERF_COUNTER_INCLUDE_PERF_COUNTER_H_
+#define PERF_COUNTER_INCLUDE_PERF_COUNTER_H_
 
 #include <linux/perf_event.h>
 #include <stdbool.h>
@@ -82,4 +82,4 @@ extern "C"
 }  // extern "C"
 #endif
 
-#endif  // PERF_COUNTER_H
+#endif  // PERF_COUNTER_INCLUDE_PERF_COUNTER_H_
