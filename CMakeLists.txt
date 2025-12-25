@@ -4,11 +4,11 @@ project(perf_counter LANGUAGES C CXX VERSION 0.1.0)
 #
 # CMake options
 #
-option(PERF_COUNTER_BUILD_EXAMPLES "Build example programs" ON)
+option(PERF_COUNTER_BUILD_EXAMPLES "Build example programs" OFF)
 message(STATUS "PERF_COUNTER_BUILD_EXAMPLES: ${PERF_COUNTER_BUILD_EXAMPLES}")
 
 #
-# Build type default: Release
+# Build type configuration
 #
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type selected, default to Release")
@@ -38,6 +38,9 @@ else()
     message(WARNING "Link-time optimization (LTO) is not supported by the compiler.")
 endif()
 
+#
+# Target definition: perf_counter
+#
 add_library(perf_counter
     src/perf_counter.c
     include/perf_counter.h
@@ -55,6 +58,9 @@ target_compile_definitions(perf_counter PRIVATE
     _GNU_SOURCE
 )
 
+#
+# Compiler warnings
+#
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(perf_counter PRIVATE
         -Wall
@@ -72,6 +78,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+#
+# Dependencies: libpfm (Optional)
+#
 find_package(PkgConfig)
 if(PkgConfig_FOUND)
     pkg_check_modules(LIBPFM QUIET libpfm)
@@ -88,12 +97,15 @@ endif()
 if(LIBPFM_FOUND)
     message(STATUS "Found libpfm: ${LIBPFM_LIBRARIES}")
     target_compile_definitions(perf_counter PUBLIC PERF_COUNTER_WITH_LIBPFM)
-    target_include_directories(perf_counter PRIVATE ${LIBPFM_INCLUDE_DIRS})
+    target_include_directories(perf_counter SYSTEM PRIVATE ${LIBPFM_INCLUDE_DIRS})
     target_link_libraries(perf_counter PRIVATE ${LIBPFM_LIBRARIES})
 else()
     message(WARNING "Package 'libpfm' not found")
 endif()
 
+#
+# Subdirectories
+#
 if (PERF_COUNTER_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
