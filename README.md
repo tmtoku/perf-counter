@@ -59,7 +59,7 @@ perf_counter_disable(&pc);
 perf_counter_close(&pc);
 ```
 
-`perf_counter_open_by_id` accepts any `PERF_TYPE_*` / `PERF_COUNT_*` from `<linux/perf_event.h>`, such as `PERF_COUNT_HW_INSTRUCTIONS` or `PERF_COUNT_HW_CACHE_MISSES`.
+`perf_counter_open_by_id` accepts any `type` / `config` combination documented in [`perf_event_open(2)`](https://man7.org/linux/man-pages/man2/perf_event_open.2.html). Set `group_fd` to `-1` to measure a single event. If measuring multiple events simultaneously, pass the file descriptor of an existing counter.
 
 When built with `libpfm4`, you can open a counter by human-readable event name instead:
 
@@ -85,7 +85,8 @@ When built with `libpfm4`, the `list_all_events` example prints all PMU events s
 Each line of the output contains an event name and a short description:
 
 ```
-perf::INSTRUCTIONS # PERF_COUNT_HW_INSTRUCTIONS
+perf::L1-DCACHE-LOADS        # L1 cache load accesses
+perf::L1-DCACHE-LOAD-MISSES  # L1 cache load misses
 ```
 
 The event name (e.g., `perf::INSTRUCTIONS`) can be passed directly to `perf_counter_open_by_name`.
