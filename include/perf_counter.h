@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -56,7 +57,11 @@ extern "C"
 
             if (counter_id == 0)
             {
-                return 0;
+                // Fallback for events without an assigned PMC (e.g., software events).
+                uint64_t count = 0;
+                read(pc->fd, &count, sizeof(count));
+                PERF_COUNTER_EXECUTION_FENCE();
+                return count;
             }
 
             __asm__ volatile("rdpmc" : "=a"(low), "=d"(high) : "c"(counter_id - 1));
