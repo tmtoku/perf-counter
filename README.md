@@ -1,12 +1,12 @@
 # perf-counter
 
-A C11 library for low-overhead hardware performance monitoring on Linux.
+A C11 library for low-overhead performance profiling on Linux.
 
 ## Overview
 
 `perf-counter` offers a programmable alternative to the Linux `perf stat` command. Unlike `perf stat`, which measures an entire process, this library lets you define custom measurement intervals directly in your code. You can precisely profile specific loops, functions, or critical sections.
 
-Internally, reading a counter value takes a single hardware instruction (`rdpmc`), avoiding the `read()` system calls. This enables high-precision measurements with minimal overhead.
+For hardware events, reading a counter value takes a single hardware instruction (`rdpmc`), avoiding `read()` system calls. This enables high-precision measurements with minimal overhead. For software events, the library falls back to `read()` automatically.
 
 ## Requirements
 
