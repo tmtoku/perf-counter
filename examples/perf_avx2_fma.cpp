@@ -111,11 +111,11 @@ int main()
     perf_counter_enable(&cycle_counter);
 
     // Latency
-    const auto latency_cycles = run_benchmark<NUM_KERNEL_LOOPS>(&cycle_counter, []() { LATENCY_KERNEL(); });
+    const auto latency_cycles = run_benchmark<NUM_KERNEL_LOOPS>(&cycle_counter, [] { LATENCY_KERNEL(); });
     print_benchmark_result("AVX2 vfmadd231ps - Latency", latency_cycles, LATENCY_TOTAL_INSTS);
 
     // Throughput
-    const auto throughput_cycles = run_benchmark<NUM_KERNEL_LOOPS>(&cycle_counter, []() { THROUGHPUT_KERNEL(); });
+    const auto throughput_cycles = run_benchmark<NUM_KERNEL_LOOPS>(&cycle_counter, [] { THROUGHPUT_KERNEL(); });
     print_benchmark_result("AVX2 vfmadd231ps - Throughput", throughput_cycles, THROUGHPUT_TOTAL_INSTS);
 
     perf_counter_disable(&cycle_counter);
